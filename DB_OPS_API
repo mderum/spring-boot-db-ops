@@ -1,0 +1,98 @@
+//Controller 
+
+  @PostMapping(value = "/commonDataFetch", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Response commonDataFetch(@RequestBody DataFetchRequest dataFetchRequest) {
+    return service.commonDataFetch(dataFetchRequest);
+  }
+
+  @PostMapping(value = "/commonSaveData", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Response commonSaveData(@RequestBody DataFetchRequest dataFetchRequest) {
+    return service.commonSaveData(dataFetchRequest);
+  }
+
+
+//service 
+@Override
+  public Response commonDataFetch(DataFetchRequest dataFetchRequest) {
+    return dao.commonDataFetch(dataFetchRequest);
+  }
+
+  @Override
+  public Response commonSaveData(DataFetchRequest dataFetchRequest) {
+    return dao.commonSaveData(dataFetchRequest);
+  }
+
+
+
+//dao 
+
+  @Override
+  public Response commonDataFetch(DataFetchRequest dataFetchRequest) {
+    logger.info("dataFetchRequest:" + dataFetchRequest);
+    try {
+      if (dataFetchRequest.getReturnType() == 0) {
+        return Response.createSuccessList(jdbcTemplate
+          .query(CommonMapper.getDataFetchQueryMapper(dataFetchRequest.getMode()), dataFetchRequest.getObjects(),
+            new BeanPropertyRowMapper<>(DataFetchResponse.class)));
+      } else {
+        return Response.createSuccess(jdbcTemplate.queryForObject(CommonMapper.getDataFetchQueryMapper(dataFetchRequest.getMode()), dataFetchRequest.getObjects(),
+          new BeanPropertyRowMapper<>(DataFetchResponse.class)));
+      }
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      logger.error("commonDataFetch-error");
+      return Response.createFail(e.getLocalizedMessage());
+    }
+  }
+
+  @Override
+  public Response commonSaveData(DataFetchRequest dataFetchRequest) {
+    try {
+      logger.info("commonSaveData:" + dataFetchRequest);
+
+      int update = jdbcTemplate.update(
+        CommonMapper.getDataFetchQueryMapper(dataFetchRequest.getMode()),
+        dataFetchRequest.getObjects());
+
+      logger.info("commonSaveData:" + update);
+      if (update > 0) {
+        return Response.createSuccessWithStatus(update);
+      }
+      return Response.createFail("FAILED");
+    } catch (Exception e) {
+      e.printStackTrace();
+      return Response.createFail("FAILED");
+    }
+  }
+
+
+
+//DTO 
+public class CommonMapper {
+  public static HashMap<String, String> dataFetchQueryMapper = new HashMap<>();
+  public static String getDataFetchQueryMapper(String mode) {
+    return dataFetchQueryMapper.get(mode);
+  }
+
+  static {
+    dataFetchQueryMapper.put("YOUR_KEY", YOUR_SQL_STRING_HERE);
+  }
+}
+
+
+public class DataFetchRequest {
+//sql params you can pass as  new object [] { "x", "Y" , 1 } 
+  private Object[] objects;
+//your query constant for mapper 
+  private String mode;
+//type of return expected from query a List or a object
+  private int returnType;
+
+  public DataFetchRequest(Object[] objects, String mode, int returnType) {
+    super();
+    this.objects = objects;
+    this.mode = mode;
+    this.returnType = returnType;
+  }
+}
